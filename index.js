@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 7860
 const currentFileName = fileURLToPath(import.meta.url)
 const currentDirectoryName = dirname(currentFileName)
 
-app.use(express.static(path.join(currentDirectoryName, 'client', 'build')))
+app.use(express.static(path.join(currentDirectoryName, 'public')))
 
 function generateRandomId() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
