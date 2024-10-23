@@ -16,7 +16,7 @@ export const upload = async folderPath => {
 
       try {
         const res = await axios.post(
-          'https://concrete-jessica-astrox10x-f4a63184.koyeb.app/api/upload',
+          'https://session-jvu4.onrender.com/api/upload',
           form,
           {
             headers: form.getHeaders(),
