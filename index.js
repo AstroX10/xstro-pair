@@ -8,7 +8,7 @@ import Baileys, {
 } from '@whiskeysockets/baileys'
 import cors from 'cors'
 import express from 'express'
-import fs from 'fs'
+import fs from 'fs-extra'
 import path, { dirname } from 'path'
 import pino from 'pino'
 import { fileURLToPath } from 'url'
