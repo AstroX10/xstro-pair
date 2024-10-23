@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <title>Xstro Pairing</title>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --bg-dark: #0f172a;
+        --card-dark: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+      }
+
+      body {
+        font-family: 'Fira Sans', sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+      }
+
+      .form-container {
+        background-color: var(--card-dark);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .form-input {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .form-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        outline: none;
+      }
+
+      .submit-button {
+        background-color: var(--primary);
+        color: white;
+        font-weight: 700;
+        transition: all 0.3s ease;
+      }
+
+      .submit-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+      }
+
+      .submit-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .loader {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top: 3px solid var(--primary);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+      }
+
+      .country-suggestion {
+        background-color: rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      .country-suggestion:hover {
+        background-color: rgba(99, 102, 241, 0.1);
+      }
+
+      .error-message {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: none;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .xstro-icon {
+        background: linear-gradient(135deg, var(--primary), #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body class="px-4">
+    <div class="container mx-auto max-w-md">
+      <div class="form-container p-8">
+        <div class="flex items-center justify-center mb-8">
+          <h1 class="text-3xl font-bold xstro-icon">Xstro Pairing</h1>
+        </div>
+
+        <div id="error-container" class="error-message"></div>
+
+        <form id="search-form" class="space-y-6" novalidate>
+          <div>
+            <label for="country" class="block text-sm font-bold mb-2">Select Country</label>
+            <input
+              type="text"
+              class="form-input w-full px-4 py-3 rounded-lg"
+              id="country"
+              placeholder="Search your country..."
+              required
+            />
+            <div id="country-suggestions" class="mt-2 rounded-lg overflow-hidden hidden"></div>
+          </div>
+
+          <div>
+            <label for="phone" class="block text-sm font-bold mb-2">Phone Number</label>
+            <input
+              type="tel"
+              class="form-input w-full px-4 py-3 rounded-lg"
+              id="phone"
+              placeholder="Enter your phone number"
+              required
+            />
+            <p id="phone-error" class="mt-2 text-red-500 text-sm font-medium hidden">
+              Please enter a valid phone number
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            class="submit-button w-full py-3 px-4 rounded-lg flex items-center justify-center"
+            id="submit-button"
+          >
+            <span id="button-text">Generate Pairing Code</span>
+            <div class="loader ml-3 hidden" id="button-loader"></div>
+          </button>
+        </form>
+
+        <div id="result" class="mt-6 text-center hidden">
+          <div class="bg-indigo-500 bg-opacity-10 rounded-lg p-4 mb-4">
+            <h4 class="font-bold mb-2">Your Pairing Code</h4>
+            <p id="code" class="text-2xl font-bold text-indigo-400"></p>
+          </div>
+          <button
+            id="copy-button"
+            class="px-4 py-2 rounded-lg bg-opacity-20 bg-white text-sm font-bold hover:bg-opacity-30 transition-all"
+          >
+            Copy Code
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const countryInput = document.getElementById('country')
+      const phoneInput = document.getElementById('phone')
+      const submitButton = document.getElementById('submit-button')
+      const buttonText = document.getElementById('button-text')
+      const buttonLoader = document.getElementById('button-loader')
+      const result = document.getElementById('result')
+      const codeSpan = document.getElementById('code')
+      const phoneError = document.getElementById('phone-error')
+      const suggestionsContainer = document.getElementById('country-suggestions')
+      const errorContainer = document.getElementById('error-container')
+
+      let countriesData = []
+
+      // Show error message
+      function showError(message) {
+        errorContainer.textContent = message
+        errorContainer.style.display = 'block'
+        setTimeout(() => {
+          errorContainer.style.display = 'none'
+        }, 5000)
+      }
+
+      // Set loading state
+      function setLoading(isLoading) {
+        submitButton.disabled = isLoading
+        buttonLoader.classList.toggle('hidden', !isLoading)
+        buttonText.textContent = isLoading ? 'Generating...' : 'Generate Pairing Code'
+      }
+
+      // Fetch countries data from REST Countries API
+      fetch('https://restcountries.com/v3.1/all')
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch countries data')
+          return response.json()
+        })
+        .then(data => {
+          countriesData = data
+            .map(country => ({
+              name: country.name.common,
+              code: country.idd.root + (country.idd.suffixes ? country.idd.suffixes[0] : ''),
+              flag: country.flags.svg,
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        })
+        .catch(error => {
+          showError('Failed to load countries. Please refresh the page.')
+        })
+
+      countryInput.addEventListener('input', function () {
+        const query = this.value.trim()
+        if (query.length === 0) {
+          suggestionsContainer.classList.add('hidden')
+          return
+        }
+
+        const suggestions = countriesData
+          .filter(country => country.name.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 5)
+
+        suggestionsContainer.innerHTML = ''
+        suggestions.forEach(country => {
+          const suggestion = document.createElement('div')
+          suggestion.classList.add(
+            'country-suggestion',
+            'p-3',
+            'flex',
+            'items-center',
+            'cursor-pointer'
+          )
+          suggestion.innerHTML = `
+            <img src="${country.flag}" 
+                 alt="${country.name} flag" 
+                 class="w-6 h-6 mr-3">
+            <span class="font-medium">${country.name}</span>
+            <span class="ml-auto text-gray-400 font-medium">${country.code}</span>
+          `
+          suggestion.onclick = () => {
+            countryInput.value = country.name
+            countryInput.dataset.code = country.code
+            suggestionsContainer.classList.add('hidden')
+          }
+          suggestionsContainer.appendChild(suggestion)
+        })
+
+        suggestionsContainer.classList.toggle('hidden', suggestions.length === 0)
+      })
+
+      document.getElementById('search-form').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        // Reset states
+        errorContainer.style.display = 'none'
+        phoneError.classList.add('hidden')
+        result.classList.add('hidden')
+
+        const phone = phoneInput.value
+        const phoneRegex = /^[0-9]+$/
+
+        if (!phoneRegex.test(phone)) {
+          phoneError.classList.remove('hidden')
+          return
+        }
+
+        const countryCode = countryInput.dataset.code
+        if (!countryCode) {
+          showError('Please select a valid country from the suggestions.')
+          return
+        }
+
+        setLoading(true)
+        const formattedPhone = `${countryCode}${phone}`
+
+        try {
+          const response = await fetch(`/pair?phone=${encodeURIComponent(formattedPhone)}`)
+
+          if (!response.ok) {
+            throw new Error('Failed to generate pairing code')
+          }
+
+          const data = await response.json()
+          codeSpan.textContent = data.code
+          result.classList.remove('hidden')
+        } catch (error) {
+          showError('Failed to generate pairing code. Please try again.')
+        } finally {
+          setLoading(false)
+        }
+      })
+
+      document.getElementById('copy-button').addEventListener('click', function () {
+        const code = codeSpan.textContent
+        navigator.clipboard
+          .writeText(code)
+          .then(() => {
+            const originalText = this.textContent
+            this.textContent = 'Copied!'
+            setTimeout(() => {
+              this.textContent = originalText
+            }, 2000)
+          })
+          .catch(() => {
+            showError('Failed to copy code to clipboard')
+          })
+      })
+    </script>
+  </body>
+</html>
